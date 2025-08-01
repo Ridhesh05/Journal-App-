@@ -64,4 +64,18 @@ public class JournalController {
         List<JournalEntry> entries = journalService.searchByTitle(title);
         return new ResponseEntity<>(entries, HttpStatus.OK);
     }
+    // Inside controller, inject Security:
+private String getCurrentUsername() {
+    return SecurityContextHolder.getContext().getAuthentication().getName();
+}
+
+// Then in each method:
+@GetMapping
+public ResponseEntity<List<JournalEntry>> getAllEntries() {
+    String username = getCurrentUsername();
+    User user = userService.findByUsername(username)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+    List<JournalEntry> entries = journalService.getAllEntriesByUser(user.getId());
+    return ResponseEntity.ok(entries);
+}
 }

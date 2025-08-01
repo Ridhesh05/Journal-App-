@@ -1,50 +1,36 @@
-package com.example.journal.service;
+// In createEntry:
+public JournalEntry createEntry(JournalEntry entry, String userId) {
+    entry.setUserId(userId);
+    return journalRepository.save(entry);
+}
 
-import com.example.journal.model.JournalEntry;
-import com.example.journal.repository.JournalRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+// Get all entries for a user
+public List<JournalEntry> getAllEntriesByUser(String userId) {
+    return journalRepository.findByUserId(userId);
+}
 
-import java.util.List;
-import java.util.Optional;
+// Get by ID and user ownership
+public Optional<JournalEntry> getEntryByIdAndUser(String id, String userId) {
+    return journalRepository.findByIdAndUserId(id, userId);
+}
 
-@Service
-public class JournalService {
-
-    @Autowired
-    private JournalRepository journalRepository;
-
-    public List<JournalEntry> getAllEntries() {
-        return journalRepository.findAll();
+// Update only if user owns it
+public JournalEntry updateEntry(String id, JournalEntry updatedEntry, String userId) {
+    Optional<JournalEntry> existing = journalRepository.findByIdAndUserId(id, userId);
+    if (existing.isPresent()) {
+        updatedEntry.setId(id);
+        updatedEntry.setUserId(userId);
+        updatedEntry.setCreatedAt(existing.get().getCreatedAt());
+        return journalRepository.save(updatedEntry);
     }
+    return null;
+}
 
-    public Optional<JournalEntry> getEntryById(String id) {
-        return journalRepository.findById(id);
+// Delete only if owned
+public boolean deleteEntry(String id, String userId) {
+    if (journalRepository.existsByIdAndUserId(id, userId)) {
+        journalRepository.deleteById(id);
+        return true;
     }
-
-    public JournalEntry createEntry(JournalEntry entry) {
-        return journalRepository.save(entry);
-    }
-
-    public JournalEntry updateEntry(String id, JournalEntry updatedEntry) {
-        Optional<JournalEntry> existingEntry = journalRepository.findById(id);
-        if (existingEntry.isPresent()) {
-            updatedEntry.setId(id);
-            updatedEntry.setCreatedAt(existingEntry.get().getCreatedAt());
-            return journalRepository.save(updatedEntry);
-        }
-        return null;
-    }
-
-    public boolean deleteEntry(String id) {
-        if (journalRepository.existsById(id)) {
-            journalRepository.deleteById(id);
-            return true;
-        }
-        return false;
-    }
-
-    public List<JournalEntry> searchByTitle(String title) {
-        return journalRepository.findByTitleContainingIgnoreCase(title);
-    }
+    return false;
 }
